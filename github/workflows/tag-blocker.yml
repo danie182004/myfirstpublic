@@ -1,0 +1,50 @@
+name: Block Tag Creation Until Reviewer Approval
+
+on:
+  push:
+    tags:
+      - 'v1*'
+      - 'v2*'
+      - 'v3*'
+
+jobs:
+  block-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Block tag creation until approval
+        run: |
+          TAG_NAME=$(basename $GITHUB_REF)
+          echo "Tag $TAG_NAME is blocked until reviewer approval."
+
+      - name: Create a Pull Request for Approval
+        id: create_pr
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tagName = process.env.TAG_NAME;
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Approval needed for tag ${tagName}`,
+              head: context.sha,
+              base: 'main',
+              body: `This PR is to approve the creation of the tag ${tagName}.`
+            });
+            return pr.html_url;
+
+      - name: Request Reviewer Approval
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prUrl = steps.create_pr.outputs.result;
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: parseInt(prUrl.split('/').pop(), 10),
+              reviewers: ['danie182004']
+            });
