@@ -15,22 +15,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Create Pull Request
-        id: create_pr
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const branchName = `release-${{ github.ref_name }}`;
-            const { data: pr } = await github.pulls.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Release ${{ github.ref_name }}`,
-              head: branchName,
-              base: 'main',
-              body: `This PR is for the new tag ${{ github.ref_name }}`
-            });
-            return pr.html_url;
+- name: Create Pull Request
+  id: create_pr
+  uses: actions/github-script@v6
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    script: |
+      const branchName = `release-${{ github.ref_name }}`;
+      const { data: pr } = await github.pulls.create({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        title: `Release ${{ github.ref_name }}`,
+        head: branchName,
+        base: 'main',
+        body: `This PR is for the new tag ${{ github.ref_name }}`
+      });
+      return pr.html_url;
 
       - name: Request Reviewer Approval
         uses: actions/github-script@v6
